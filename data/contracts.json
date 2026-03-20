@@ -1,0 +1,23 @@
+[
+  {
+    "contractCode": "000001.SZ",
+    "contractName": "平安银行",
+    "exchange": "SZ",
+    "productCode": "000001",
+    "productType": "STOCK"
+  },
+  {
+    "contractCode": "000002.SZ",
+    "contractName": "万科A",
+    "exchange": "SZ",
+    "productCode": "000002",
+    "productType": "STOCK"
+  },
+  {
+    "contractCode": "000003.SZ",
+    "contractName": "国农科技",
+    "exchange": "SZ",
+    "productCode": "000003",
+    "productType": "STOCK"
+  }
+]
