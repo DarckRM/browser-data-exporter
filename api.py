@@ -23,10 +23,11 @@ def request_dept(url: str) -> list[dict]:
         DEPTS.append(dept)
     return DEPTS 
 
-def request_contracts(url: str, autOrgId: str, startTime: str, endTime: str) -> None:
+def request_contracts(url: str, autOrgId: str, orgAuth: str, startTime: str, endTime: str) -> list:
     # url = "https://contract.pgyl.cn/scc-contract-business/contract/select"
     data = {"isMainContract": "0", "contractStatusList": ["2", "4"], "listType": "WH", "authOrgId": autOrgId, "contractClassifyCodeList": [
         "CONTRACT_CLASSIFY01"], "dataType": "contract", "authOrgType": "2", "viewId": 1, "createTimeStart": startTime, "createTimeEnd": endTime, "isOperator": 0, "listQueryType": "CHECK", "qryScene": "JYF", "pageSize": 20, "pageNo": 1}
+    COMMON_HEADERS['Orgauth'] = orgAuth
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
     resp.raise_for_status()
     data = resp.json()['data']
@@ -45,11 +46,12 @@ def request_contracts(url: str, autOrgId: str, startTime: str, endTime: str) -> 
         if 1 <= choice_num <= len(contracts):
             selected_contract = contracts[choice_num - 1]
             print(f"你选择了: {selected_contract['contractName']}")
-            export_specific_contract(selected_contract)
+            export_specific_contract('', selected_contract)
         else:
             print("无效的选项，程序退出。")
     except ValueError:
         print("输入不是数字，程序退出。")
+    return []
 
 
 def request_materials(url: str) -> None:
@@ -95,4 +97,4 @@ if __name__ == "__main__":
     decade_ago_time = time.strftime(
         "%Y-%m-%d", time.localtime(time.time() - 10 * 365 * 24 * 3600))
 
-    request_contracts(startTime=decade_ago_time, endTime=now_time)
+    request_contracts('', '', startTime=decade_ago_time, endTime=now_time)

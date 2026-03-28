@@ -4,6 +4,8 @@ import json
 import asyncio
 import typer
 from playwright.async_api import Page, async_playwright, Playwright
+
+from menu import WebContext
 # https://xxxx.edu.cn/appportalweb/seatspace/
 
 """
@@ -17,13 +19,6 @@ TARGET_URL_PREFIX = 'http://127.0.0.1:8081/dashboard/home'
 RESPONSE_URL = "http://127.0.0.1:8081/jsgy-api/sys/permission/getUserPermissionByToken*"
 
 CONS = json.load(open('CONSTANTS', 'r'))
-
-async def init_browser(playwright: Playwright): 
-    browser = await playwright.chromium.launch(headless=False)
-    context = await browser.new_context()
-    page = await context.new_page()
-
-    return browser, context, page
 
 async def direct_to_target(page):
     target_url = CONS['WORKBENCH_URL']
@@ -42,80 +37,76 @@ async def direct_to_target(page):
         await page.close()
         sys.exit(1)
 
-async def run_with_cookies(playwright: Playwright) -> "Page":
-    browser, context, page = await init_browser(playwright)
-
+async def run_with_cookies(wctx: WebContext) -> "WebContext":
     workbench_url = CONS['WORKBENCH_URL']
 
     # 从文件加载 cookies
     with open('./cookies/sso_cookies.json', 'r') as json_file:
         cookies = json.load(json_file)
-        await context.add_cookies(cookies)
+        await wctx.ctx.add_cookies(cookies)
     
-    await page.goto(workbench_url)
+    await wctx.page.goto(workbench_url)
 
     try:
-        await page.wait_for_function(
+        await wctx.page.wait_for_function(
             f"window.location.href.startsWith('{workbench_url}')",
             timeout=6200000
         )
         print("✅ 使用 cookies 登录成功！")
-        workbench_cookies = await context.cookies()
+        workbench_cookies = await wctx.ctx.cookies()
 
         with open('./cookies/workbench_cookies.json', 'w') as json_file:
             json.dump(workbench_cookies, json_file)
 
     except Exception:
         print("❌ 等待超时，未检测到登录成功。程序退出。")
-        await page.close()
-        await context.close()
+        await wctx.page.close()
+        await wctx.ctx.close()
         sys.exit(1)
 
-    return page
+    return wctx 
 
 
-async def run(playwright: Playwright, sso_url: str = CONS['SSO_URL'], verify_url: str = CONS['VERIFY_URL'] ) -> "Page":
-    browser, context, page = await init_browser(playwright)
-
-    await page.goto(verify_url)
+async def run(wctx: WebContext, sso_url: str = CONS['SSO_URL'], verify_url: str = CONS['VERIFY_URL'] ) -> "WebContext":
+    await wctx.page.goto(verify_url)
 
     # if user token is expired redirect to sso login page
     try:
         # waiting user manually login and redirect to verify_url
-        await page.wait_for_function(
+        await wctx.page.wait_for_function(
             f"window.location.href.startsWith('{verify_url}')",
             timeout=6200000
         )
         print("✅ 登录成功！")
-        sso_cookies = await context.cookies()
+        sso_cookies = await wctx.ctx.cookies()
 
         # verify page cookie is different from business page, saved with different name
         with open('./cookies/sso_cookies.json', 'w') as json_file:
             json.dump(sso_cookies, json_file)
     except Exception:
         print("❌ 等待超时，未检测到登录成功。程序退出。")
-        await page.close()
-        await context.close()
+        await wctx.page.close()
+        await wctx.ctx.close()
         sys.exit(1)
 
-    await page.reload()
+    await wctx.page.reload()
 
     # 等待某个响应并获取 RespoRes Header
     # async with page.expect_response(RESPONSE_URL, timeout=3000000) as resp_info:
     #     text = await resp_info.value
     #     print(text)
 
-    return page
+    return wctx
 
 
 
-async def login_with_cookies(playwright: Playwright) -> "Page":
-    return await run_with_cookies(playwright)
+async def login_with_cookies(wctx: WebContext) -> "WebContext":
+    return await run_with_cookies(wctx)
 
 
-async def login(playwright: Playwright) -> "Page":
-    return await run(playwright)
+async def login(wctx: WebContext) -> "WebContext":
+    return await run(wctx)
 
 
 if __name__ == "__main__":
-    asyncio.run(login())
+    asyncio.run(login(WebContext()))
