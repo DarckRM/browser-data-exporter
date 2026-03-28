@@ -3,3 +3,5 @@ sensetive_data
 cookies
 CONSTANTS
 __pycache__
+depts.json
+selected_contract.json

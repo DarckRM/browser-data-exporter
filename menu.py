@@ -19,7 +19,7 @@ CURRENT_DEPT = {}
 
 ORG_AUTH = ''
 
-CONS = json.load(open('CONSTANTS', 'r'))
+CONS = json.load(open('CONSTANTS', 'r', encoding='utf-8'))
 
 class WebContext:
     browser: Browser
@@ -68,9 +68,15 @@ async def ui_choose_login(console: Console, wctx: WebContext):
 async def ui_select_dept(console: Console, wctx: WebContext):
     global DEPTS_CACHE
     if len(DEPTS_CACHE) == 0:
-        DEPTS_CACHE = api.request_dept(CONS['DEPT_LIST_URL'])
+        # load from local file system
+        try:
+            with open('./data/depts.json', 'r', encoding='utf-8') as json_file:
+                DEPTS_CACHE = json.load(json_file)
+        except FileNotFoundError:
+            DEPTS_CACHE = api.request_dept(CONS['DEPT_LIST_URL'])
+            with open('./data/depts.json', 'w', encoding='utf-8') as json_file:
+                json.dump(DEPTS_CACHE, json_file, ensure_ascii=False)
 
-    
     table = Table()
     table.add_column("序号", justify="center", style="cyan", no_wrap=True)
     table.add_column("部门名称", justify="left", style="cyan")
@@ -108,7 +114,7 @@ async def ui_select_dept(console: Console, wctx: WebContext):
         await ui_select_dept(console, wctx)
 
 
-async def ui_feature_menu(console: Console, wctx: WebContext):
+async def ui_feature_menu(console: Console, wctx: WebContext) -> None:
     table = Table(title="功能选择", title_justify="left")
 
     table.add_column("选项", justify="center", style="cyan", no_wrap=True)
@@ -127,10 +133,19 @@ async def ui_feature_menu(console: Console, wctx: WebContext):
 
 async def ui_feature_callback(choice, console: Console, wctx: WebContext):
     if choice == "1":
+        console.clear()
         await ui_select_dept(console, wctx)
     elif choice == "2":
+        console.clear()
+        if not CURRENT_DEPT:
+            print("❌ 请先选择部门！")
+            return ui_feature_menu(console, wctx)
         await ui_export_specific_contract(console, wctx)
     elif choice == "3":
+        console.clear()
+        if not CURRENT_DEPT:
+            print("❌ 请先选择部门！")
+            return ui_feature_menu(console, wctx)
         await ui_auto_export_contracts(console, wctx)
     else:
         print("❌ 无效的选择，请重新选择。")
@@ -154,23 +169,33 @@ async def ui_auto_export_contracts(console: Console, wctx: WebContext):
         await ui_feature_menu(console, wctx)
 
 
-async def ui_export_specific_contract(console: Console, wctx: WebContext):
+async def ui_export_specific_contract(console: Console, wctx: WebContext, contracts: list = None):
     table = Table()
     table.add_column("序号", justify="center", style="cyan", no_wrap=True)
     table.add_column("合同编号", justify="left", style="cyan", no_wrap=True)
     table.add_column("合同名称", justify="left", style="cyan")
-    for idx, item in enumerate(load_contracts(), start=1):
+    temp_contracts = load_contracts() if contracts is None else contracts
+    for idx, item in enumerate(temp_contracts, start=1):
         table.add_row(str(idx), item['contractCode'], item['contractName'])
     console.print(table)
-    contract_code = typer.prompt("请输入要导出的合同序号")
-    console.clear()
-    console.print(f"❌ 未找到合同编号 {contract_code}，请检查输入是否正确。")
+    contract_num = typer.prompt("请输入要导出的合同序号")
+    try:
+        contract_idx = int(contract_num)
+        if not (1 <= contract_idx <= len(temp_contracts)):
+            raise ValueError
+    except ValueError:
+        print("❌ 输入无效，请输入正确的合同序号。")
+        await ui_export_specific_contract(console, wctx, temp_contracts)
+        return
+    contract = temp_contracts[contract_idx - 1]
+    with open('./data/selected_contract.json', 'w', encoding='utf-8') as json_file:
+        json.dump(contract, json_file, ensure_ascii=False)
+    print(f"✅ 已选择合同: {contract['contractName']}，正在导出数据... (功能正在开发中)")
     await ui_feature_menu(console, wctx)
 
 
 def load_contracts(path='./data/contracts.json') -> list:
-    datas = api.request_contracts(CONS['CONTRACT_LIST_URL'], CURRENT_DEPT['authOrgId'], CURRENT_DEPT['orgAuth'], "2024-01-01", "2024-12-31")
-    # datas = json.load(open('./data/contracts.json', 'r'))
+    datas = api.request_contracts(CONS['CONTRACT_LIST_URL'], CURRENT_DEPT['authOrgPath'], CURRENT_DEPT['orgAuth'], "2024-01-01", "2024-12-31")
     return datas
 
 
@@ -200,6 +225,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     asyncio.run(main())
-
-    while True:
-        time.sleep(1)

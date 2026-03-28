@@ -11,7 +11,7 @@ COMMON_HEADERS = {
 }
 DEPTS = []
 
-def request_company(url: str, orgAuth: str) -> dict:
+def request_company(url: str) -> dict:
     # COMMON_HEADERS['Orgauth'] = orgAuth
     # url = "https://contract.pgyl.cn/permission/getHasPermissionAuthOrgs"
     resp = requests.get(url, headers=COMMON_HEADERS, timeout=10)
@@ -33,33 +33,17 @@ def request_dept(url: str) -> list[dict]:
 
 def request_contracts(url: str, autOrgId: str, orgAuth: str, startTime: str, endTime: str) -> list:
     # url = "https://contract.pgyl.cn/scc-contract-business/contract/select"
-    data = {"isMainContract": "0", "contractStatusList": ["2", "4"], "listType": "WH", "authOrgId": autOrgId, "contractClassifyCodeList": [
-        "CONTRACT_CLASSIFY01"], "dataType": "contract", "authOrgType": "2", "viewId": 1, "createTimeStart": startTime, "createTimeEnd": endTime, "isOperator": 0, "listQueryType": "CHECK", "qryScene": "JYF", "pageSize": 20, "pageNo": 1}
+    data = {"isMainContract": "0", "contractStatusList": ["1", "2", "3", "4", "7"], "listType": "WH", "authOrgId": autOrgId, "contractClassifyCodeList": [
+        "CONTRACT_CLASSIFY01"], "dataType": "contract", "authOrgType": "2", "viewId": 1, "createTimeStart": startTime, "createTimeEnd": endTime, "isOperator": 0, "listQueryType": "ALL", "qryScene": "JYF", "pageSize": 20, "pageNo": 1}
     COMMON_HEADERS['Orgauth'] = orgAuth
+    print(data)
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
     resp.raise_for_status()
     data = resp.json()['data']
     print(f"Total Contracts: {data.get('total', 0)}")
     contracts = data.get('list', [])
 
-    print("Available Contracts:")
-    num = 1
-    for contract in contracts:
-        print(f"{num}: {contract['contractName']}")
-        num += 1
-
-    choice = input("请输入选项: ").strip()
-    try:
-        choice_num = int(choice)
-        if 1 <= choice_num <= len(contracts):
-            selected_contract = contracts[choice_num - 1]
-            print(f"你选择了: {selected_contract['contractName']}")
-            export_specific_contract('', selected_contract)
-        else:
-            print("无效的选项，程序退出。")
-    except ValueError:
-        print("输入不是数字，程序退出。")
-    return []
+    return contracts
 
 
 def request_materials(url: str) -> None:
