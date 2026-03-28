@@ -11,6 +11,14 @@ COMMON_HEADERS = {
 }
 DEPTS = []
 
+def request_company(url: str, orgAuth: str) -> dict:
+    # COMMON_HEADERS['Orgauth'] = orgAuth
+    # url = "https://contract.pgyl.cn/permission/getHasPermissionAuthOrgs"
+    resp = requests.get(url, headers=COMMON_HEADERS, timeout=10)
+    resp.raise_for_status()
+    depts = resp.json()
+    return depts
+
 
 def request_dept(url: str) -> list[dict]:
     # url = "https://contract.pgyl.cn/permission/getHasPermissionAuthOrgs"
