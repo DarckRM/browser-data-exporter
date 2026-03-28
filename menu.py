@@ -70,12 +70,6 @@ async def ui_select_dept(console: Console, wctx: WebContext):
     if len(DEPTS_CACHE) == 0:
         DEPTS_CACHE = api.request_dept(CONS['DEPT_LIST_URL'])
 
-
-
-    # 等待某个响应并获取 RespoRes Header
-    # async with page.expect_response(RESPONSE_URL, timeout=3000000) as resp_info:
-    #     text = await resp_info.value
-    #     print(text)
     
     table = Table()
     table.add_column("序号", justify="center", style="cyan", no_wrap=True)
@@ -94,6 +88,12 @@ async def ui_select_dept(console: Console, wctx: WebContext):
             global CURRENT_DEPT
             CURRENT_DEPT = DEPTS_CACHE[choice_num - 1]
             print(f"✅ 已选择部门: {CURRENT_DEPT['orgSimpleName']}")
+            # 选择部门后需要查出父公司作为请求后续数据的校验字段
+            company = api.request_company(f'{CONS["PARENT_COMPANY_URL"]}?id={CURRENT_DEPT["authOrgId"]}')
+            CURRENT_DEPT['companyId'] = company['orgId']
+            CURRENT_DEPT['companyPath'] = company['code']
+            CURRENT_DEPT['companyName'] = company['name']
+            CURRENT_DEPT['companyFullName'] = company['fullName']
             # 选择部门后构造校验字段加密并赋值全局变量
             CURRENT_DEPT['authOrgIdAndProviderId'] = f'{CURRENT_DEPT["authOrgId"]|CURRENT_DEPT["authOrgProviderId"]}'
             global ORG_AUTH
