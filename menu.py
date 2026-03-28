@@ -95,7 +95,7 @@ async def ui_select_dept(console: Console, wctx: WebContext):
             CURRENT_DEPT = DEPTS_CACHE[choice_num - 1]
             print(f"✅ 已选择部门: {CURRENT_DEPT['orgSimpleName']}")
             # 选择部门后构造校验字段加密并赋值全局变量
-            CURRENT_DEPT['authOrgIdAndProviderId'] = f'{CURRENT_DEPT["authOrgId"]|CURRENT_DEPT["authOrgProviderId"]}'
+            CURRENT_DEPT['authOrgIdAndProviderId'] = f'{CURRENT_DEPT["authOrgId"]}|{CURRENT_DEPT["authOrgProviderId"]}'
             global ORG_AUTH
             ORG_AUTH = encode.encode_single_segment_token(CURRENT_DEPT, ensure_ascii=False)
             CURRENT_DEPT['orgAuth'] = ORG_AUTH
