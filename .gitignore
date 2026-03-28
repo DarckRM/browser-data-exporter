@@ -1,3 +1,5 @@
 .venv
 sensetive_data
 cookies
+CONSTANTS
+__pycache__

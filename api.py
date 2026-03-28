@@ -1,12 +1,12 @@
 import requests
 import time
+import json
 
 # How to fetch Cookie
-cookies = {'TS01867a55': '01168561aef446db5e7ab4050b3803e0fb20da99ffa33f5fe457feb07f4a3d8f7c55311cadaa52afc5b5294361930e4bd30b968de6',
-           'scc-contract-business-gateway': 'ZjIzOWZmZmUtMTAwYy00ZmEwLTlmMDQtNDkzNTUwNDFjODlm', 'sidebarStatus': '0'}
+cookies: list = json.load(open('cookies/workbench_cookies.json', 'r'))
 
 COMMON_HEADERS = {
-    "Cookie": "; ".join(f"{k}={v}" for k, v in cookies.items()),
+    "Cookie": "; ".join(f"{k}={v}" for k, v in {cookie['name']: cookie['value'] for cookie in cookies}.items()),
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36 Edg/145.0.0.0",
 }
 DEPTS = []
@@ -18,16 +18,14 @@ def request_dept(url: str) -> list[dict]:
         "business", "common"], "hrOrgId": "", "hrOrgProviderId": ""}
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
     resp.raise_for_status()
-    print('Available Departments:')
     depts = resp.json()
     for dept in depts:
-        print(f"{dept['orgSimpleName']}")
         DEPTS.append(dept)
     return DEPTS 
 
-def request_contracts(url: str, startTime: str, endTime: str) -> None:
+def request_contracts(url: str, autOrgId: str, startTime: str, endTime: str) -> None:
     # url = "https://contract.pgyl.cn/scc-contract-business/contract/select"
-    data = {"isMainContract": "0", "contractStatusList": ["2", "4"], "listType": "WH", "authOrgId": "00001000490002700056", "contractClassifyCodeList": [
+    data = {"isMainContract": "0", "contractStatusList": ["2", "4"], "listType": "WH", "authOrgId": autOrgId, "contractClassifyCodeList": [
         "CONTRACT_CLASSIFY01"], "dataType": "contract", "authOrgType": "2", "viewId": 1, "createTimeStart": startTime, "createTimeEnd": endTime, "isOperator": 0, "listQueryType": "CHECK", "qryScene": "JYF", "pageSize": 20, "pageNo": 1}
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
     resp.raise_for_status()
