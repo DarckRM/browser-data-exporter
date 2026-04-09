@@ -1,4 +1,6 @@
+from asyncio import constants
 import copy
+import datetime
 import json
 import time
 import typer
@@ -121,35 +123,54 @@ async def ui_feature_menu(console: Console, wctx: WebContext) -> None:
     table.add_column("描述", justify="left", style="cyan")
 
     table.add_row("1", "选择部门（当前部门: [yellow]{}[/yellow]）".format(CURRENT_DEPT['orgSimpleName'] if CURRENT_DEPT else "未选择"))
-    table.add_row("2", "指定合同编号导出表格")
-    table.add_row("3", "根据预设条件导出合同表格")
+    table.add_row("2", "从合同列表中选择并导出表格")
+    table.add_row("3", "根据预设条件批量导出合同表格")
+    table.add_row("4", "指定合同编号导出表格")
+    table.add_row("0", "退出")
 
-    console.print(table)
+    while True:
+        console.print(table)
 
-    choice = console.input("请输入选项编号: ")
-    console.clear()
-    await ui_feature_callback(choice, console, wctx)
+        choice = console.input("请输入选项编号: ")
+        console.clear()
+        await ui_feature_callback(choice, console, wctx)
 
 
 async def ui_feature_callback(choice, console: Console, wctx: WebContext):
+    if choice == "0":
+        exit()
+
+    # 如果操作不是选择部分并且当前未选择部门强制要求用户选择
+    if not CURRENT_DEPT and choice != "1":
+        print("❌ 请先选择部门！")
+        await ui_feature_menu(console, wctx)
+
     if choice == "1":
         console.clear()
         await ui_select_dept(console, wctx)
     elif choice == "2":
         console.clear()
-        if not CURRENT_DEPT:
-            print("❌ 请先选择部门！")
-            return ui_feature_menu(console, wctx)
         await ui_export_specific_contract(console, wctx)
     elif choice == "3":
         console.clear()
-        if not CURRENT_DEPT:
-            print("❌ 请先选择部门！")
-            return ui_feature_menu(console, wctx)
         await ui_auto_export_contracts(console, wctx)
+    elif choice == "4":
+        await ui_query_contract_by_contract_no(console, wctx)
     else:
         print("❌ 无效的选择，请重新选择。")
         await ui_feature_menu(console, wctx)
+
+
+async def ui_query_contract_by_contract_no(console: Console, wctx: WebContext):
+    # 输入指定合同编号查询
+    info = typer.prompt("请输入想要查询合同编号: ")
+
+    contracs = load_contracts(info)
+    if len(contracs) == 0:
+        console.print(f"未找到 {info} 对应合同信息！")
+        return
+
+    await ui_export_specific_contract(console, wctx, )
 
 
 async def ui_auto_export_contracts(console: Console, wctx: WebContext):
@@ -169,7 +190,7 @@ async def ui_auto_export_contracts(console: Console, wctx: WebContext):
         await ui_feature_menu(console, wctx)
 
 
-async def ui_export_specific_contract(console: Console, wctx: WebContext, contracts: list = None):
+async def ui_export_specific_contract(console: Console, wctx: WebContext, contracts: list = []):
     table = Table()
     table.add_column("序号", justify="center", style="cyan", no_wrap=True)
     table.add_column("合同编号", justify="left", style="cyan", no_wrap=True)
@@ -194,8 +215,11 @@ async def ui_export_specific_contract(console: Console, wctx: WebContext, contra
     await ui_feature_menu(console, wctx)
 
 
-def load_contracts(path='./data/contracts.json') -> list:
-    datas = api.request_contracts(CONS['CONTRACT_LIST_URL'], CURRENT_DEPT['authOrgPath'], CURRENT_DEPT['orgAuth'], "2024-01-01", "2024-12-31")
+def load_contracts(info: str = '', path='./data/contracts.json') -> list:
+    now_time = datetime.datetime.now()
+    decade_time = now_time - datetime.timedelta(days=3650)
+
+    datas = api.request_contracts(CONS['CONTRACT_LIST_URL'], CURRENT_DEPT['authOrgPath'], CURRENT_DEPT['orgAuth'], decade_time.strftime("%Y-%m-%d"), now_time.strftime("%Y-%m-%d"), info)
     return datas
 
 

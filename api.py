@@ -31,10 +31,12 @@ def request_dept(url: str) -> list[dict]:
         DEPTS.append(dept)
     return DEPTS 
 
-def request_contracts(url: str, autOrgId: str, orgAuth: str, startTime: str, endTime: str) -> list:
+def request_contracts(url: str, autOrgId: str, orgAuth: str, startTime: str, endTime: str, info: str) -> list:
     # url = "https://contract.pgyl.cn/scc-contract-business/contract/select"
     data = {"isMainContract": "0", "contractStatusList": ["1", "2", "3", "4", "7"], "listType": "WH", "authOrgId": autOrgId, "contractClassifyCodeList": [
         "CONTRACT_CLASSIFY01"], "dataType": "contract", "authOrgType": "2", "viewId": 1, "createTimeStart": startTime, "createTimeEnd": endTime, "isOperator": 0, "listQueryType": "ALL", "qryScene": "JYF", "pageSize": 20, "pageNo": 1}
+    if info != '':
+        data['contractInfo'] = info
     COMMON_HEADERS['Orgauth'] = orgAuth
     print(data)
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
@@ -89,4 +91,4 @@ if __name__ == "__main__":
     decade_ago_time = time.strftime(
         "%Y-%m-%d", time.localtime(time.time() - 10 * 365 * 24 * 3600))
 
-    request_contracts('', '', startTime=decade_ago_time, endTime=now_time)
+    # request_contracts('', '', startTime=decade_ago_time, endTime=now_time, info=None)
