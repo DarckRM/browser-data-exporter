@@ -38,7 +38,6 @@ def request_contracts(url: str, autOrgId: str, orgAuth: str, startTime: str, end
     if info != '':
         data['contractInfo'] = info
     COMMON_HEADERS['Orgauth'] = orgAuth
-    print(data)
     resp = requests.post(url, json=data, headers=COMMON_HEADERS, timeout=10)
     resp.raise_for_status()
     data = resp.json()['data']

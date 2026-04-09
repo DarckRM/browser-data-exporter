@@ -17,7 +17,7 @@ from playwright.async_api import Browser, BrowserContext, Page, async_playwright
 DEPTS_CACHE = []
 
 CURRENT_USER = "Anyone"
-CURRENT_DEPT = {}
+CURRENT_DEPT = {'orgSimpleName': '未选择部门'}
 
 ORG_AUTH = ''
 
@@ -64,8 +64,6 @@ async def ui_choose_login(console: Console, wctx: WebContext):
     page = await login_method_callback(choice, wctx)
     # 刷新屏幕
     console.clear()
-    print(
-        f"✅ [green]已成功登录工作平台[/green]: 用户({CURRENT_USER}) - 部门({CURRENT_DEPT})")
 
 async def ui_select_dept(console: Console, wctx: WebContext):
     global DEPTS_CACHE
@@ -117,6 +115,8 @@ async def ui_select_dept(console: Console, wctx: WebContext):
 
 
 async def ui_feature_menu(console: Console, wctx: WebContext) -> None:
+    console.clear()
+    print(f"✅ [green]已成功登录工作平台[/green]: 用户({CURRENT_USER}) - 部门({CURRENT_DEPT['orgSimpleName']})")
     table = Table(title="功能选择", title_justify="left")
 
     table.add_column("选项", justify="center", style="cyan", no_wrap=True)
@@ -165,12 +165,12 @@ async def ui_query_contract_by_contract_no(console: Console, wctx: WebContext):
     # 输入指定合同编号查询
     info = typer.prompt("请输入想要查询合同编号: ")
 
-    contracs = load_contracts(info)
-    if len(contracs) == 0:
+    contracts = load_contracts(info)
+    if len(contracts) == 0:
         console.print(f"未找到 {info} 对应合同信息！")
         return
 
-    await ui_export_specific_contract(console, wctx, )
+    await ui_export_specific_contract(console, wctx, contracts)
 
 
 async def ui_auto_export_contracts(console: Console, wctx: WebContext):
